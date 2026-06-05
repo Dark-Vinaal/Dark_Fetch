@@ -1,4 +1,4 @@
-# 🛠️ DarkFetch
+# 🖥️ DarkFetch
 
 `DarkFetch` is a sleek, lightweight system information fetcher written in Python. It gathers key system details, hardware specs, and resource utilization metrics, displaying them in a beautifully formatted terminal output with custom ASCII progress bars and vibrant styling.
 
@@ -79,7 +79,7 @@ python darkfetch.py
 
 ## 🛠️ Architecture
 
-DarkFetch is contained in a single, highly optimized script [darkfetch.py](file:///home/vinaal/Documents/Projects/Fetch/darkfetch.py). Here is how the gather-and-render flow works:
+DarkFetch is contained in a single, highly optimized script [darkfetch.py](https://github.com/Dark-Vinaal/Dark_Fetch/blob/main/darkfetch.py). Here is how the gather-and-render flow works:
 
 ```mermaid
 graph TD
@@ -98,6 +98,16 @@ graph TD
 
 ---
 
+## 💻 Live Demo
+
+![DarkFetch](https://github.com/Dark-Vinaal/Dark_Fetch/blob/main/assets/darkfetch.png)
+
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+> If you find this project useful, a star ⭐ would be much appreciated!
+---
