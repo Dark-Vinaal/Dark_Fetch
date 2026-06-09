@@ -98,6 +98,24 @@ graph TD
 
 ---
 
+## 🛠️ Structure
+
+```md
+Start Program
+     ↓
+Import required modules
+     ↓
+Check optional libraries (psutil, rich, GPUtil)
+     ↓
+Collect system information
+     ↓
+Format data nicely
+     ↓
+Render colorful terminal UI
+```
+
+---
+
 ## 💻 Live Demo
 
 ![DarkFetch](https://github.com/Dark-Vinaal/Dark_Fetch/blob/main/assets/darkfetch.png)
