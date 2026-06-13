@@ -1,131 +1,296 @@
-# 🖥️ DarkFetch
+<div align="center">
 
-`DarkFetch` is a sleek, lightweight system information fetcher written in Python. It gathers key system details, hardware specs, and resource utilization metrics, displaying them in a beautifully formatted terminal output with custom ASCII progress bars and vibrant styling.
+![Banner](https://github.com/Dark-Vinaal/Dark-Vinaal/blob/main/Assets/red-banner.svg)
 
-```text
-  ██████╗  █████╗ ██████╗ ██╗  ██╗    ███████╗███████╗████████╗ ██████╗██╗  ██╗
-  ██╔══██╗██╔══██╗██╔══██╗██║ ██╔╝    ██╔════╝██╔════╝╚══██╔══╝██╔════╝██║  ██║
-  ██║  ██║███████║██████╔╝█████╔╝     █████╗  █████╗     ██║   ██║     ███████║
-  ██║  ██║██╔══██║██╔══██╗██╔═██╗     ██╔══╝  ██╔══╝     ██║   ██║     ██╔══██║
-  ██████╔╝██║  ██║██║  ██║██║  ██╗    ██║     ███████╗   ██║   ╚██████╗██║  ██║
-  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝    ╚═╝     ╚══════╝   ╚═╝    ╚═════╝╚═╝  ╚═╝
-```
+<pre>
+██████╗  █████╗ ██████╗ ██╗  ██╗    ███████╗███████╗████████╗ ██████╗██╗  ██╗
+██╔══██╗██╔══██╗██╔══██╗██║ ██╔╝    ██╔════╝██╔════╝╚══██╔══╝██╔════╝██║  ██║
+██║  ██║███████║██████╔╝█████╔╝     █████╗  █████╗     ██║   ██║     ███████║
+██║  ██║██╔══██║██╔══██╗██╔═██╗     ██╔══╝  ██╔══╝     ██║   ██║     ██╔══██║
+██████╔╝██║  ██║██║  ██║██║  ██╗    ██║     ███████╗   ██║   ╚██████╗██║  ██║
+╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝    ╚═╝     ╚══════╝   ╚═╝    ╚═════╝╚═╝  ╚═╝
+</pre>
 
----
+<br>
+
+<img src="https://readme-typing-svg.herokuapp.com?font=Orbitron&weight=700&size=24&duration=2500&pause=700&color=FF3131&center=true&vCenter=true&width=1000&lines=⚡+SYSTEM+SCAN+INITIALIZED...;🧠+Loading+Hardware+Modules...;🚀+Rendering+Terminal+Interface...;🌌+Welcome+To+DarkFetch" />
+
+<br><br>
+
+<img src="https://img.shields.io/badge/PYTHON-3.6+-FF3131?style=for-the-badge&labelColor=000000&logo=python"/>
+<img src="https://img.shields.io/badge/STATUS-STABLE-FF3131?style=for-the-badge&labelColor=000000"/>
+<img src="https://img.shields.io/badge/TERMINAL-FUTURISTIC-FF3131?style=for-the-badge&labelColor=000000"/>
+
+<br><br>
+
+<a href="https://github.com/Dark-Vinaal/Dark_Fetch">
+  <img src="https://img.shields.io/badge/⚡_OPEN_REPOSITORY-1A0000?style=for-the-badge&logo=github&logoColor=FF3131"/>
+</a>
+
+</div>
+
+![redline](https://github.com/Dark-Vinaal/Dark-Vinaal/blob/main/Assets/red-line.svg)
+
+## 🌌 DarkFetch
+
+> A futuristic Python-based system information fetch utility designed with modern terminal aesthetics, real-time hardware insights, and beautifully rendered output.
+
+DarkFetch gathers:
+- 🧠 Hardware Information
+- ⚡ Resource Utilization
+- 🌐 Network Details
+- 🖥️ Software Environment Data
+- 🚀 System Metrics
+
+and displays them in a sleek cyberpunk-inspired terminal interface.
+
+![redline](https://github.com/Dark-Vinaal/Dark-Vinaal/blob/main/Assets/red-line.svg)
 
 ## ✨ Features
 
-- **Rich Visual Output**: Utilizes the `rich` library for terminal colors, styles, and modern formatting. Automatically falls back to a clean plain-text renderer if `rich` is not installed.
-- **Hardware & Resource Monitoring**:
-  - **CPU**: Model info, core/thread count, and real-time usage indicator.
-  - **RAM**: Memory usage and totals with visually dynamic bar charts.
-  - **Swap**: Swap space utilization.
-  - **Disk**: Partition usage and totals for root (`/`).
-  - **GPU**: Auto-detection (supports exact Nvidia GPU details when `GPUtil` is available, falls back to `lspci`).
-  - **Battery**: Battery charge percentage and charging status.
-- **Software Environment Info**:
-  - **OS & Kernel**: Detailed Linux distribution detection (reads `/etc/os-release`) or macOS versioning.
-  - **Shell & Terminal**: Detects active shell, version, and current terminal emulator (via environment variables or process tree traversal).
-  - **Package Counts**: Package details for `pacman`, `apt`, and `pip`.
-  - **Python Environment**: Detects active virtual environment (`venv` or `Conda`).
-- **Network**: Displays active local IP address.
-- **Automatic Sandbox Loading**: Built-in logic checks for local virtual environments (`.venv/darkfetch`) and automatically inserts its `site-packages` into the search path.
+<div align="center">
 
----
+| ⚡ Feature | 🌌 Description |
+|---|---|
+| 🎨 Rich Terminal UI | Beautiful styling powered by `rich` |
+| 🧠 Hardware Monitoring | CPU, RAM, Disk, GPU, Battery |
+| 🌐 Network Detection | Local IP & system networking |
+| 🐍 Python Environment Detection | Detects venv & Conda |
+| 🖥️ OS & Shell Detection | Kernel, distro, shell, terminal |
+| ⚛️ Dynamic Progress Bars | Modern resource indicators |
+| 🚀 Automatic Fallback System | Works even without optional libs |
+| 🛰️ Lightweight Architecture | Single optimized Python script |
 
-## 🚀 Getting Started
+</div>
 
-### Prerequisites
+![redline](https://github.com/Dark-Vinaal/Dark-Vinaal/blob/main/Assets/red-line.svg)
 
-DarkFetch runs on **Python 3.6+**. While it can run with no external dependencies (in plain-text mode), installing the recommended libraries unlocks full functionality and beautiful colors.
+## ⚛️ System Architecture
 
-### Installation
+```mermaid
+graph TD
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/yourusername/Fetch.git
-   cd Fetch
-   ```
+A[🚀 Start DarkFetch] --> B{🔍 Check Local Virtual Environment}
 
-2. **Set up a Virtual Environment** (Optional but Recommended):
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   ```
+B -->|Found| C[📦 Insert site-packages into sys.path]
+B -->|Not Found| D[⚡ Continue Initialization]
 
-3. **Install Dependencies**:
-   To install all recommended packages for rich styling and full hardware inspection:
-   ```bash
-   pip install rich psutil GPUtil
-   ```
+C --> E[🧠 Import Optional Libraries]
+D --> E
 
----
+E --> F[📊 Gather System Information]
+
+F --> G[🖥️ CPU Metrics]
+F --> H[💾 RAM Usage]
+F --> I[🎮 GPU Detection]
+F --> J[🌐 Network Information]
+F --> K[🐍 Python Environment]
+F --> L[⚡ Battery Status]
+
+G --> M{🎨 Is Rich Installed?}
+
+M -->|Yes| N[🌌 Render Futuristic UI]
+M -->|No| O[📄 Render Plain Terminal Output]
+
+N --> P[✅ Display Results]
+O --> P
+```
+
+![redline](https://github.com/Dark-Vinaal/Dark-Vinaal/blob/main/Assets/red-line.svg)
+
+## 🧠 Information Collected
+
+```mermaid
+graph LR
+
+A[🖥️ DarkFetch] --> B[⚡ CPU]
+A --> C[💾 RAM]
+A --> D[🛰️ GPU]
+A --> E[🌐 Network]
+A --> F[🐍 Python]
+A --> G[🖥️ Shell]
+A --> H[🔋 Battery]
+A --> I[💽 Disk]
+```
+
+![redline](https://github.com/Dark-Vinaal/Dark-Vinaal/blob/main/Assets/red-line.svg)
+
+## 🎨 Design Philosophy
+
+```txt
+Minimal Terminal UI
+        +
+Cyberpunk Aesthetic
+        +
+Real-Time System Data
+        +
+Rich Styling
+        +
+Lightweight Python Architecture
+        =
+DARKFETCH
+```
+
+![redline](https://github.com/Dark-Vinaal/Dark-Vinaal/blob/main/Assets/red-line.svg)
+
+## 🚀 Installation
+
+### 📦 Clone Repository
+
+```bash
+git clone https://github.com/Dark-Vinaal/Dark_Fetch.git
+cd Dark_Fetch
+```
+
+### 🐍 Create Virtual Environment
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### ⚡ Install Recommended Dependencies
+
+```bash
+pip install rich psutil GPUtil
+```
+
+![redline](https://github.com/Dark-Vinaal/Dark-Vinaal/blob/main/Assets/red-line.svg)
 
 ## 💻 Usage
 
-Run the script directly from your terminal:
+### 🚀 Run DarkFetch
 
 ```bash
 python darkfetch.py
 ```
 
-### Dependency Fallbacks
+> For Live preview, checkout the image attached below
 
-- If **`rich`** is missing, the script prints a standard plain-text version with a tip to install it.
-- If **`psutil`** is missing, resource usage details (CPU, RAM, Swap, Disk) will fall back to OS-level checks (e.g. `/proc` systems on Linux) where possible.
-- If **`GPUtil`** is missing, GPU details will fall back to standard Linux `lspci` graphics card listings.
+![redline](https://github.com/Dark-Vinaal/Dark-Vinaal/blob/main/Assets/red-line.svg)
 
----
+## ⚛️ Dependency Fallback System
 
-## 🛠️ Architecture
+- DarkFetch is designed to gracefully degrade functionality depending on installed libraries.
 
-DarkFetch is contained in a single, highly optimized script [darkfetch.py](https://github.com/Dark-Vinaal/Dark_Fetch/blob/main/darkfetch.py). Here is how the gather-and-render flow works:
+| Dependency | Purpose | Fallback |
+|---|---|---|
+| `rich` | Styled terminal rendering | Plain text mode |
+| `psutil` | Hardware statistics | OS-level checks |
+| `GPUtil` | Nvidia GPU detection | `lspci` GPU parsing |
+
+![redline](https://github.com/Dark-Vinaal/Dark-Vinaal/blob/main/Assets/red-line.svg)
+
+## 🛰️ Rendering Pipeline
 
 ```mermaid
-graph TD
-    A[Start darkfetch.py] --> B{Check for Local venv}
-    B -- Found --> C[Insert venv site-packages to sys.path]
-    B -- Not Found --> D[Continue]
-    C --> E[Import Libraries: psutil, rich, GPUtil]
-    D --> E
-    E --> F[Gather System Info OS, Kernel, Shell, CPU, RAM, GPU...]
-    F --> G{Is rich installed?}
-    G -- Yes --> H[Render with render_rich Console]
-    G -- No --> I[Render with render_plain stdout]
-    H --> J[End]
-    I --> J
+sequenceDiagram
+
+User->>DarkFetch: Run Program
+DarkFetch->>System: Collect Hardware Data
+System-->>DarkFetch: Return Metrics
+DarkFetch->>Renderer: Format Output
+Renderer->>Terminal: Display Futuristic UI
+Terminal-->>User: Show System Dashboard
 ```
 
----
+![redline](https://github.com/Dark-Vinaal/Dark-Vinaal/blob/main/Assets/red-line.svg)
 
-## 🛠️ Structure
+## 📂 Project Structure
 
-```md
-Start Program
-     ↓
-Import required modules
-     ↓
-Check optional libraries (psutil, rich, GPUtil)
-     ↓
-Collect system information
-     ↓
-Format data nicely
-     ↓
-Render colorful terminal UI
+```txt
+📦 Dark_Fetch/
+│
+├── 🐍 darkfetch.py
+├── 🖼️ assets/
+├── 📄 README.md
+├── ⚖️ LICENSE
+└── 📦 requirements.txt
 ```
 
----
+![redline](https://github.com/Dark-Vinaal/Dark-Vinaal/blob/main/Assets/red-line.svg)
 
-## 💻 Live Demo
+## 🌌 Core Technologies
 
-![DarkFetch](https://github.com/Dark-Vinaal/Dark_Fetch/blob/main/assets/darkfetch.png)
+<div align="center">
 
----
+<img src="https://skillicons.dev/icons?i=python,linux,bash,git,github,vscode"/>
 
-## 📄 License
+</div>
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+![redline](https://github.com/Dark-Vinaal/Dark-Vinaal/blob/main/Assets/red-line.svg)
 
----
-> If you find this project useful, a star ⭐ would be much appreciated!
----
+## 🧠 Supported Platforms
+
+| Platform | Status |
+|---|---|
+| 🐧 Linux | ✅ Fully Supported |
+| 🍎 macOS | ✅ Supported |
+| 🪟 Windows | ⚠️ Partial Compatibility |
+
+![redline](https://github.com/Dark-Vinaal/Dark-Vinaal/blob/main/Assets/red-line.svg)
+
+## 💻 Live Preview
+
+<div align="center">
+
+<img src="https://github.com/Dark-Vinaal/Dark_Fetch/blob/main/assets/darkfetch.png" width="100%"/>
+
+</div>
+
+![redline](https://github.com/Dark-Vinaal/Dark-Vinaal/blob/main/Assets/red-line.svg)
+
+## 🌌 Inspiration
+
+```mermaid
+graph LR
+
+A[🌌 Inspired By] --> B[🖥️ Neofetch]
+A --> C[⚡ Fastfetch]
+A --> D[🤖 Futuristic Terminal UIs]
+A --> E[🌃 Cyberpunk Interfaces]
+A --> F[🧠 System Monitoring Tools]
+```
+
+![redline](https://github.com/Dark-Vinaal/Dark-Vinaal/blob/main/Assets/red-line.svg)
+
+## 🧠 Future Upgrades
+
+- 🌌 Animated terminal rendering
+- ⚛️ Better GPU telemetry
+- 📊 Real-time monitoring mode
+- 🛰️ Plugin architecture
+- 🔥 Cross-platform optimization
+- 🤖 Interactive dashboard mode
+
+![redline](https://github.com/Dark-Vinaal/Dark-Vinaal/blob/main/Assets/red-line.svg)
+
+## 👨‍🚀 Developer
+
+<div align="center">
+
+# Vinaal R
+
+### Creative Developer • Terminal UI Enthusiast • Futuristic Interface Explorer
+
+<img src="https://readme-typing-svg.herokuapp.com?font=Orbitron&weight=700&size=20&duration=2500&pause=700&color=FF3131&center=true&vCenter=true&width=700&lines=⚡+Always+Building...;🚀+Always+Exploring...;🧠+Always+Optimizing..." />
+
+</div>
+
+![redline](https://github.com/Dark-Vinaal/Dark-Vinaal/blob/main/Assets/red-line.svg)
+
+## 🌐 Connect
+
+<div align="center">
+
+<a href="https://github.com/Dark-Vinaal">
+  <img src="https://img.shields.io/badge/GitHub-000000?style=for-the-badge&logo=github&logoColor=00F7FF"/>
+</a>
+
+<a href="https://www.linkedin.com/in/vinaal">
+  <img src="https://img.shields.io/badge/LinkedIn-000000?style=for-the-badge&logo=linkedin&logoColor=00F7FF"/>
+</a>
+
+![Footer](https://github.com/Dark-Vinaal/Dark-Vinaal/blob/main/Assets/red-footer.svg)
+
+</div>
