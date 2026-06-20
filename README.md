@@ -66,7 +66,7 @@ DarkFetch runs on **Python 3.6+**. While it can run with no external dependencie
 Run the script directly from your terminal:
 
 ```bash
-python darkfetch.py
+python3 darkfetch.py
 ```
 
 ### Dependency Fallbacks
