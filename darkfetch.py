@@ -14,11 +14,12 @@ for venv_name in (".venv", "venv", os.path.join(".venv", "darkfetch")):
             sys.path.insert(0, _site)
         break
 
-
 import platform
 import socket
 import datetime
 import subprocess
+import shutil
+import re
 
 try:
     import psutil
@@ -39,6 +40,10 @@ try:
 except ImportError:
     HAS_GPUTIL = False
 
+SYSTEM = platform.system()
+IS_WINDOWS = SYSTEM == "Windows"
+IS_LINUX = SYSTEM == "Linux"
+IS_MACOS = SYSTEM == "Darwin"
 
 BANNER = r"""
   ██████╗  █████╗ ██████╗ ██╗  ██╗    ███████╗███████╗████████╗ ██████╗██╗  ██╗
@@ -77,16 +82,12 @@ def bar_color(pct):
     return "red"
 
 def get_os():
-    try:
-        with open("/etc/os-release") as f:
-            for line in f:
-                if line.startswith("PRETTY_NAME="):
-                    parts = line.split("=", 1)
-                    if len(parts) > 1:
-                        return parts[1].strip().strip('\'"')
-    except Exception:
-        pass
-    if platform.system() == "Darwin":
+    if IS_WINDOWS:
+        try:
+            return f"Windows {platform.release()} {platform.version()}"
+        except Exception:
+            pass
+    elif IS_MACOS:
         try:
             prod_name = subprocess.check_output(["sw_vers", "-productName"], stderr=subprocess.DEVNULL).decode().strip()
             prod_ver = subprocess.check_output(["sw_vers", "-productVersion"], stderr=subprocess.DEVNULL).decode().strip()
@@ -96,6 +97,29 @@ def get_os():
                 return f"macOS {platform.mac_ver()[0]}"
             except Exception:
                 pass
+    else:
+        try:
+            with open("/etc/os-release") as f:
+                for line in f:
+                    if line.startswith("PRETTY_NAME="):
+                        parts = line.split("=", 1)
+                        if len(parts) > 1:
+                            return parts[1].strip().strip('\'"')
+        except Exception:
+            pass
+        if hasattr(platform, 'freedesktop_os_release'):
+            try:
+                release_info = platform.freedesktop_os_release()
+                if 'PRETTY_NAME' in release_info:
+                    return release_info['PRETTY_NAME']
+            except Exception:
+                pass
+        try:
+            out = subprocess.check_output(["lsb_release", "-ds"], stderr=subprocess.DEVNULL).decode().strip().strip('\'"')
+            if out: return out
+        except Exception:
+            pass
+            
     return f"{platform.system()} {platform.release()}"
 
 def get_kernel():
@@ -109,11 +133,29 @@ def get_uptime():
         except Exception:
             pass
     if secs is None:
-        try:
-            with open("/proc/uptime", "r") as f:
-                secs = int(float(f.readline().split()[0]))
-        except Exception:
-            pass
+        if IS_WINDOWS:
+            try:
+                import ctypes
+                secs = int(getattr(ctypes, "windll").kernel32.GetTickCount64() / 1000)
+            except Exception:
+                pass
+        elif IS_MACOS:
+            try:
+                out = subprocess.check_output(["sysctl", "-n", "kern.boottime"], stderr=subprocess.DEVNULL).decode()
+                if "sec = " in out:
+                    match = re.search(r"sec = (\d+)", out)
+                    if match:
+                        boot_time = int(match.group(1))
+                        secs = int(datetime.datetime.now().timestamp() - boot_time)
+            except Exception:
+                pass
+        else:
+            try:
+                with open("/proc/uptime", "r") as f:
+                    secs = int(float(f.readline().split()[0]))
+            except Exception:
+                pass
+                
     if secs is None or secs < 0:
         return "N/A"
     
@@ -127,14 +169,25 @@ def get_uptime():
     return " ".join(parts)
 
 def get_shell():
-    shell = os.environ.get("SHELL", "")
-    if not shell:
-        return "N/A"
-    name = os.path.basename(shell)
+    if IS_WINDOWS:
+        shell = os.environ.get("COMSPEC", "")
+        if not shell:
+            return "N/A"
+    else:
+        shell = os.environ.get("SHELL", "")
+        if not shell:
+            return "N/A"
+            
+    name = os.path.basename(shell).lower().replace('.exe', '')
+    
     try:
-        result = subprocess.run(
-            [shell, "--version"], capture_output=True, text=True, timeout=2
-        )
+        if name in ("powershell", "pwsh"):
+            result = subprocess.run([shell, "-Command", "$PSVersionTable.PSVersion.ToString()"], capture_output=True, text=True, timeout=2)
+            version = result.stdout.strip()
+            if version: return f"{name} {version}"
+            return name
+            
+        result = subprocess.run([shell, "--version"], capture_output=True, text=True, timeout=2)
         output = result.stdout or result.stderr
         if not output:
             return name
@@ -153,43 +206,91 @@ def get_shell():
         return name
 
 def get_terminal():
-    # 1. Try TERM_PROGRAM first
-    term_program = os.environ.get("TERM_PROGRAM")
-    if term_program:
-        return term_program
-    # 2. Try inspecting parent process using psutil
+    for term_env in ("WT_SESSION", "TERMINAL_EMULATOR", "TERM_PROGRAM"):
+        val = os.environ.get(term_env)
+        if val:
+            if term_env == "WT_SESSION": return "Windows Terminal"
+            return val
+            
+    for var in ("TERM", "COLORTERM"):
+        val = os.environ.get(var)
+        if val and val not in ("xterm-256color", "xterm", "linux", "dumb", "screen", "tmux"):
+            return val
+
     if HAS_PSUTIL:
         try:
             parent = psutil.Process().parent()
             while parent:
                 pname = parent.name()
-                if pname.lower() not in ("bash", "zsh", "fish", "sh", "python", "python3", "sudo", "systemd", "init"):
+                pname_lower = pname.lower()
+                ignore_list = ("bash", "zsh", "fish", "sh", "python", "python3", "sudo", "systemd", "init", "cmd.exe", "powershell.exe", "pwsh.exe", "su", "sshd", "tmux", "screen")
+                if pname_lower not in ignore_list and "python" not in pname_lower:
+                    if pname_lower == "windowsterminal.exe":
+                        return "Windows Terminal"
+                    if pname_lower == "conhost.exe":
+                        return "Command Prompt"
+                    if pname_lower == "terminal.app":
+                        return "Terminal.app"
                     return pname
                 parent = parent.parent()
         except Exception:
             pass
-    # 3. Fallback to TERM or COLORTERM
-    for var in ("TERM", "COLORTERM"):
-        val = os.environ.get(var)
-        if val:
-            return val
+            
+    val = os.environ.get("TERM")
+    if val: return val
     return "N/A"
 
 def get_packages():
-    managers = {
-        "pacman": ["pacman", "-Q"],
-        "apt":    ["dpkg", "--list"],
-        "pip":    [sys.executable, "-m", "pip", "list"],
-    }
+    managers = {}
+    if IS_LINUX:
+        managers = {
+            "pacman": ["pacman", "-Q"],
+            "yay": ["yay", "-Q"],
+            "paru": ["paru", "-Q"],
+            "apt": ["dpkg", "--list"],
+            "dpkg": ["dpkg", "--list"],
+            "dnf": ["dnf", "list", "installed"],
+            "rpm": ["rpm", "-qa"],
+            "zypper": ["zypper", "search", "--installed-only"],
+            "xbps": ["xbps-query", "-l"],
+            "apk": ["apk", "info"],
+            "nix": ["nix-env", "-q"],
+            "flatpak": ["flatpak", "list"],
+            "snap": ["snap", "list"],
+            "pip": [sys.executable, "-m", "pip", "list"],
+        }
+    elif IS_WINDOWS:
+        managers = {
+            "winget": ["winget", "list"],
+            "choco": ["choco", "list", "--local-only"],
+            "scoop": ["scoop", "list"],
+            "pip": [sys.executable, "-m", "pip", "list"],
+        }
+    elif IS_MACOS:
+        managers = {
+            "brew": ["brew", "list"],
+            "pip": [sys.executable, "-m", "pip", "list"],
+        }
+
     results = []
     for name, cmd in managers.items():
+        if not shutil.which(cmd[0]) and cmd[0] != sys.executable:
+            continue
         try:
-            out = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, timeout=3)
+            out = subprocess.check_output(cmd, stderr=subprocess.DEVNULL, timeout=5)
             lines = out.decode().strip().splitlines()
-            if name == "apt":
+            if name in ("apt", "dpkg"):
                 count = max(0, len(lines) - 5)
             elif name == "pip":
                 count = max(0, len(lines) - 2)
+            elif name == "winget":
+                count = len([l for l in lines if l.strip() and not l.startswith('-') and not l.startswith('Name') and "==" not in l])
+            elif name == "snap":
+                count = len([l for l in lines if l.strip() and not l.startswith('Name') and "No snaps" not in l])
+            elif name == "flatpak":
+                count = len([l for l in lines if l.strip() and not l.startswith('Name') and "No flatpaks" not in l])
+            elif name == "brew":
+                count = len([l for l in lines if l.strip() and "==" not in l])
             else:
                 count = len(lines)
             if count > 0:
@@ -201,8 +302,22 @@ def get_packages():
 def get_cpu():
     name = "Unknown"
     try:
-        if platform.system() == "Darwin":
-            name = subprocess.check_output(["sysctl", "-n", "machdep.cpu.brand_string"], stderr=subprocess.DEVNULL).decode().strip()
+        if IS_MACOS:
+            try:
+                name = subprocess.check_output(["sysctl", "-n", "machdep.cpu.brand_string"], stderr=subprocess.DEVNULL).decode().strip()
+            except Exception:
+                try:
+                    name = subprocess.check_output(["sysctl", "-n", "hw.model"], stderr=subprocess.DEVNULL).decode().strip()
+                except Exception:
+                    name = platform.processor() or platform.machine()
+        elif IS_WINDOWS:
+            name = platform.processor()
+            if not name:
+                try:
+                    out = subprocess.check_output(["powershell", "-Command", "(Get-CimInstance Win32_Processor).Name"], stderr=subprocess.DEVNULL, text=True, timeout=3).strip()
+                    if out: name = out.splitlines()[0]
+                except Exception:
+                    pass
         else:
             with open("/proc/cpuinfo") as f:
                 for line in f:
@@ -211,71 +326,178 @@ def get_cpu():
                         break
     except Exception:
         name = platform.processor() or platform.machine()
+        
     if not HAS_PSUTIL:
         return name, "?", "?", 0.0
     cores   = psutil.cpu_count(logical=False) or "?"
     threads = psutil.cpu_count(logical=True)  or "?"
-    usage   = psutil.cpu_percent(interval=0.4)
+    try:
+        usage = psutil.cpu_percent(interval=0.4)
+    except Exception:
+        usage = 0.0
     return name, cores, threads, usage
 
 def get_ram():
     if HAS_PSUTIL:
-        vm = psutil.virtual_memory()
-        return vm.used, vm.total, vm.percent
-    # Fallback for Linux
-    try:
-        meminfo = {}
-        with open("/proc/meminfo") as f:
-            for line in f:
-                parts = line.split()
-                if len(parts) >= 2:
-                    meminfo[parts[0].rstrip(":")] = int(parts[1]) * 1024
-        total = meminfo.get("MemTotal", 0)
-        if total > 0:
-            available = meminfo.get("MemAvailable", meminfo.get("MemFree", 0))
-            used = max(0, total - available)
-            percent = (used / total) * 100
+        try:
+            vm = psutil.virtual_memory()
+            return vm.used, vm.total, vm.percent
+        except Exception:
+            pass
+            
+    if IS_WINDOWS:
+        try:
+            import ctypes
+            class MEMORYSTATUSEX(ctypes.Structure):
+                _fields_ = [
+                    ("dwLength", ctypes.c_ulong),
+                    ("dwMemoryLoad", ctypes.c_ulong),
+                    ("ullTotalPhys", ctypes.c_ulonglong),
+                    ("ullAvailPhys", ctypes.c_ulonglong),
+                    ("ullTotalPageFile", ctypes.c_ulonglong),
+                    ("ullAvailPageFile", ctypes.c_ulonglong),
+                    ("ullTotalVirtual", ctypes.c_ulonglong),
+                    ("ullAvailVirtual", ctypes.c_ulonglong),
+                    ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+                ]
+            stat = MEMORYSTATUSEX()
+            stat.dwLength = ctypes.sizeof(MEMORYSTATUSEX)
+            getattr(ctypes, "windll").kernel32.GlobalMemoryStatusEx(ctypes.byref(stat))
+            total = stat.ullTotalPhys
+            available = stat.ullAvailPhys
+            used = total - available
+            percent = (used / total) * 100 if total > 0 else 0
             return used, total, percent
-    except Exception:
-        pass
+        except Exception:
+            pass
+    elif IS_MACOS:
+        try:
+            total = int(subprocess.check_output(["sysctl", "-n", "hw.memsize"]).strip())
+            return 0, total, 0.0
+        except Exception:
+            pass
+    else:
+        try:
+            meminfo = {}
+            with open("/proc/meminfo") as f:
+                for line in f:
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        meminfo[parts[0].rstrip(":")] = int(parts[1]) * 1024
+            total = meminfo.get("MemTotal", 0)
+            if total > 0:
+                available = meminfo.get("MemAvailable", meminfo.get("MemFree", 0))
+                used = max(0, total - available)
+                percent = (used / total) * 100
+                return used, total, percent
+        except Exception:
+            pass
     return 0, 0, 0
 
 def get_swap():
     if HAS_PSUTIL:
-        sw = psutil.swap_memory()
-        return sw.used, sw.total, sw.percent
-    # Fallback for Linux
-    try:
-        meminfo = {}
-        with open("/proc/meminfo") as f:
-            for line in f:
-                parts = line.split()
-                if len(parts) >= 2:
-                    meminfo[parts[0].rstrip(":")] = int(parts[1]) * 1024
-        total = meminfo.get("SwapTotal", 0)
-        if total > 0:
-            free = meminfo.get("SwapFree", 0)
-            used = max(0, total - free)
-            percent = (used / total) * 100
+        try:
+            sw = psutil.swap_memory()
+            return sw.used, sw.total, sw.percent
+        except Exception:
+            pass
+            
+    if IS_WINDOWS:
+        try:
+            import ctypes
+            class MEMORYSTATUSEX(ctypes.Structure):
+                _fields_ = [
+                    ("dwLength", ctypes.c_ulong),
+                    ("dwMemoryLoad", ctypes.c_ulong),
+                    ("ullTotalPhys", ctypes.c_ulonglong),
+                    ("ullAvailPhys", ctypes.c_ulonglong),
+                    ("ullTotalPageFile", ctypes.c_ulonglong),
+                    ("ullAvailPageFile", ctypes.c_ulonglong),
+                    ("ullTotalVirtual", ctypes.c_ulonglong),
+                    ("ullAvailVirtual", ctypes.c_ulonglong),
+                    ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+                ]
+            stat = MEMORYSTATUSEX()
+            stat.dwLength = ctypes.sizeof(MEMORYSTATUSEX)
+            getattr(ctypes, "windll").kernel32.GlobalMemoryStatusEx(ctypes.byref(stat))
+            total = max(0, stat.ullTotalPageFile - stat.ullTotalPhys)
+            available = max(0, stat.ullAvailPageFile - stat.ullAvailPhys)
+            used = total - available
+            percent = (used / total) * 100 if total > 0 else 0
             return used, total, percent
-    except Exception:
-        pass
+        except Exception:
+            pass
+    elif IS_MACOS:
+        try:
+            out = subprocess.check_output(["sysctl", "-n", "vm.swapusage"]).decode()
+            m_total = re.search(r"total = ([\d.]+)M", out)
+            m_used = re.search(r"used = ([\d.]+)M", out)
+            if m_total and m_used:
+                total = float(m_total.group(1)) * 1024 * 1024
+                used = float(m_used.group(1)) * 1024 * 1024
+                percent = (used / total) * 100 if total > 0 else 0
+                return used, total, percent
+        except Exception:
+            pass
+    else:
+        try:
+            meminfo = {}
+            with open("/proc/meminfo") as f:
+                for line in f:
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        meminfo[parts[0].rstrip(":")] = int(parts[1]) * 1024
+            total = meminfo.get("SwapTotal", 0)
+            if total > 0:
+                free = meminfo.get("SwapFree", 0)
+                used = max(0, total - free)
+                percent = (used / total) * 100
+                return used, total, percent
+        except Exception:
+            pass
     return 0, 0, 0
 
+def get_disk_root():
+    if IS_WINDOWS:
+        return os.environ.get("SystemDrive", "C:") + "\\"
+    return "/"
+
+def get_disk_label():
+    if IS_WINDOWS:
+        return f"Disk ({os.environ.get('SystemDrive', 'C:')}\\)"
+    return "Disk (/)"
+
 def get_disk():
+    root = get_disk_root()
     if HAS_PSUTIL:
-        du = psutil.disk_usage("/")
-        return du.used, du.total, du.percent
-    # Fallback for Unix/Linux
-    try:
-        st = os.statvfs("/")
-        total = st.f_blocks * st.f_frsize
-        free = st.f_bfree * st.f_frsize
-        used = total - free
-        percent = (used / total) * 100 if total > 0 else 0
-        return used, total, percent
-    except Exception:
-        pass
+        try:
+            du = psutil.disk_usage(root)
+            return du.used, du.total, du.percent
+        except Exception:
+            pass
+    if IS_WINDOWS:
+        try:
+            import ctypes
+            free_bytes = ctypes.c_ulonglong(0)
+            total_bytes = ctypes.c_ulonglong(0)
+            getattr(ctypes, "windll").kernel32.GetDiskFreeSpaceExW(ctypes.c_wchar_p(root), None, ctypes.byref(total_bytes), ctypes.byref(free_bytes))
+            total = total_bytes.value
+            free = free_bytes.value
+            used = total - free
+            percent = (used / total) * 100 if total > 0 else 0
+            return used, total, percent
+        except Exception:
+            pass
+    else:
+        try:
+            st = os.statvfs(root)
+            total = st.f_blocks * st.f_frsize
+            free = st.f_bfree * st.f_frsize
+            used = total - free
+            percent = (used / total) * 100 if total > 0 else 0
+            return used, total, percent
+        except Exception:
+            pass
     return 0, 0, 0
 
 def get_gpu():
@@ -289,32 +511,88 @@ def get_gpu():
                 return g.name, f"{g.name}  [{bar}]  {g.memoryUsed:.0f} MB / {g.memoryTotal:.0f} MB  ({pct}%)"
         except Exception:
             pass
-    try:
-        result = subprocess.check_output(
-            ["lspci"], stderr=subprocess.DEVNULL, timeout=3
-        ).decode()
-        gpus = []
-        for line in result.splitlines():
-            if "VGA" in line or "3D" in line or "Display" in line:
-                gpus.append(line.split(":")[-1].strip()[:70])
-        if gpus:
-            return None, "  │  ".join(gpus)
-    except Exception:
-        pass
-    return None, "N/A  (install GPUtil for NVIDIA details)"
+            
+    gpus = []
+    if IS_WINDOWS:
+        try:
+            out = subprocess.check_output(["powershell", "-Command", "(Get-CimInstance Win32_VideoController).Name"], text=True, timeout=5).strip()
+            if out:
+                gpus = [line.strip() for line in out.splitlines() if line.strip()]
+        except Exception:
+            pass
+        if not gpus:
+            try:
+                out = subprocess.check_output(["wmic", "path", "win32_VideoController", "get", "name"], text=True, timeout=5).strip()
+                lines = out.splitlines()
+                if len(lines) > 1:
+                    gpus = [line.strip() for line in lines[1:] if line.strip()]
+            except Exception:
+                pass
+    elif IS_MACOS:
+        try:
+            out = subprocess.check_output(["system_profiler", "SPDisplaysDataType"], text=True, timeout=5)
+            for line in out.splitlines():
+                if "Chipset Model:" in line:
+                    gpus.append(line.split(":", 1)[1].strip())
+        except Exception:
+            pass
+    else:
+        if shutil.which("lspci"):
+            try:
+                result = subprocess.check_output(["lspci"], stderr=subprocess.DEVNULL, timeout=3).decode()
+                for line in result.splitlines():
+                    if "VGA" in line or "3D" in line or "Display" in line:
+                        gpus.append(line.split(":")[-1].strip()[:70])
+            except Exception:
+                pass
+
+    if gpus:
+        return None, "  │  ".join(gpus)
+    return None, "N/A"
 
 def get_battery():
-    if not HAS_PSUTIL:
-        return None
-    try:
-        batt = psutil.sensors_battery()
-        if batt is None:
-            return None
-        status = "Charging" if batt.power_plugged else "Discharging"
-        bar    = ascii_bar(batt.percent, 100)
-        return batt.percent, f"[{bar}]  {batt.percent:.0f}%  [{status}]"
-    except Exception:
-        return None
+    if HAS_PSUTIL:
+        try:
+            batt = psutil.sensors_battery()
+            if batt is not None:
+                status = "Charging" if batt.power_plugged else "Discharging"
+                bar    = ascii_bar(batt.percent, 100)
+                return batt.percent, f"[{bar}]  {batt.percent:.0f}%  [{status}]"
+        except Exception:
+            pass
+            
+    if IS_MACOS:
+        try:
+            out = subprocess.check_output(["pmset", "-g", "batt"], text=True, timeout=2)
+            m = re.search(r"(\d+)%;\s*(\w+)", out)
+            if m:
+                percent = float(m.group(1))
+                status_raw = m.group(2).lower()
+                status = "Charging" if "charg" in status_raw else "Discharging"
+                bar = ascii_bar(percent, 100)
+                return percent, f"[{bar}]  {percent:.0f}%  [{status}]"
+        except Exception:
+            pass
+    elif IS_LINUX:
+        try:
+            batt_dir = None
+            base_dir = "/sys/class/power_supply"
+            if os.path.exists(base_dir):
+                for d in os.listdir(base_dir):
+                    if d.startswith("BAT"):
+                        batt_dir = os.path.join(base_dir, d)
+                        break
+            if batt_dir and os.path.exists(batt_dir):
+                with open(os.path.join(batt_dir, "capacity")) as f:
+                    percent = float(f.read().strip())
+                with open(os.path.join(batt_dir, "status")) as f:
+                    status = f.read().strip()
+                bar = ascii_bar(percent, 100)
+                return percent, f"[{bar}]  {percent:.0f}%  [{status}]"
+        except Exception:
+            pass
+            
+    return None
 
 def get_local_ip():
     try:
@@ -372,10 +650,11 @@ def gather():
     else:
         info["Swap"]  = "N/A"
         
+    disk_label = get_disk_label()
     if disk_total > 0:
-        info["Disk (/)"] = (disk_pct, f"[{ascii_bar(disk_used, disk_total)}]  {format_bytes(disk_used)} / {format_bytes(disk_total)}  ({disk_pct:.0f}%)")
+        info[disk_label] = (disk_pct, f"[{ascii_bar(disk_used, disk_total)}]  {format_bytes(disk_used)} / {format_bytes(disk_total)}  ({disk_pct:.0f}%)")
     else:
-        info["Disk (/)"] = "N/A"
+        info[disk_label] = "N/A"
         
     info["GPU"]       = gpu_display
     if battery:
